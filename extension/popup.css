@@ -1,0 +1,230 @@
+:root {
+  --paper: #f7f4ee;
+  --ink: #1e293b;
+  --soft: #64748b;
+  --rule: #e2ddd4;
+  --accent: #0f766e;
+  --accent-deep: #115e59;
+  --highlight: #fde68a;
+  --warn: #c2410c;
+}
+
+html,
+body {
+  margin: 0;
+  width: 360px;
+  background: var(--paper);
+  color: var(--ink);
+  font: 15px/1.45 "Segoe UI", system-ui, sans-serif;
+}
+
+main {
+  padding: 18px 18px 16px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.mark {
+  width: 10px;
+  height: 28px;
+  border-radius: 3px;
+  background: var(--accent);
+  box-shadow: 4px 6px 0 var(--highlight);
+}
+
+.wordmark {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.tag {
+  margin: 0;
+  color: var(--soft);
+  font-size: 0.78rem;
+}
+
+h1 {
+  font-size: 1.28rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0 0 10px;
+}
+
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid var(--rule);
+  border-radius: 14px;
+  padding: 10px 12px;
+  resize: vertical;
+  background: #fff;
+  font: inherit;
+}
+
+textarea:focus {
+  outline: 2px solid var(--accent);
+  border-color: var(--accent);
+}
+
+.label,
+.eyebrow {
+  margin: 12px 0 6px;
+  color: var(--accent-deep);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.time-pick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 0 6px;
+}
+
+.time-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1.5px solid var(--rule);
+  background: #fff;
+  border-radius: 14px;
+  padding: 6px;
+}
+
+.time-field label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.time-field input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: center;
+  font: inherit;
+  font-size: 1.35rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  padding: 0;
+  -moz-appearance: textfield;
+}
+
+.time-field input::-webkit-outer-spin-button,
+.time-field input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.time-field input:focus {
+  outline: none;
+}
+
+.time-field span {
+  color: var(--soft);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.step {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.step:hover {
+  background: var(--highlight);
+}
+
+.time-preview {
+  margin: 0 0 12px;
+  color: var(--soft);
+  font-size: 0.84rem;
+}
+
+.primary,
+.ghost {
+  width: 100%;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  padding: 12px;
+  margin-top: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.primary:hover {
+  background: var(--accent-deep);
+}
+
+.ghost {
+  background: transparent;
+  border-color: var(--rule);
+  color: var(--ink);
+}
+
+.privacy,
+#ended-intention {
+  color: var(--soft);
+  font-size: 0.84rem;
+  margin: 0;
+}
+
+.goal {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--highlight);
+  border-radius: 12px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.countdown {
+  font-size: 2.4rem;
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  margin: 10px 0 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.error {
+  color: var(--warn);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}

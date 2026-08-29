@@ -1,0 +1,664 @@
+# Razor — Cursor-Ready MVP Blueprint
+
+## 1. Product decision
+
+### Product name
+
+**Razor**
+
+### Short product description
+
+Razor is a user-activated focus companion that helps students protect the intention that brought them online. During an explicitly started study session, it checks YouTube activity against the student’s declared study goal and gently highlights possible goal drift without blocking, shaming, or continuously monitoring the user outside the session.
+
+### Product hook
+
+> **Razor does not ban the internet. It protects the purpose that brought the student online.**
+
+### One-sentence MVP
+
+> **When a student starts a timed study session, Razor monitors YouTube only within that session, compares the current video metadata with the student’s intention, and provides a respectful choice when meaningful goal drift is detected.**
+
+### Target user
+
+The MVP targets a **secondary student who studies independently using YouTube but is easily pulled from relevant educational content toward unrelated recommendations**.
+
+Use one fictional demonstration persona, Maya, rather than trying to support students, parents, teachers, and young adults simultaneously.
+
+## 2. Problem definition
+
+### Observed problem hypothesis
+
+Students often begin an online study session with a clear intention, but their behavior can drift when recommendations, Shorts, entertainment, or familiar creators compete for attention. Existing screen-time tools measure duration or impose broad restrictions. They do not understand the student’s specific purpose for being online.
+
+This is a hypothesis to validate, not a diagnosis of all students.
+
+### Specific problem statement
+
+> **Maya wants to use YouTube to study physics, but after starting with relevant content she may follow unrelated recommendations and lose time without consciously deciding to change her goal. She needs a respectful way to notice meaningful goal drift while keeping control over her own choices.**
+
+### Point-of-view statement
+
+> **Maya, a goal-oriented secondary student, needs a way to compare her current digital activity with the study intention she set because algorithmic recommendations can gradually pull her away from important tasks before she notices the change.**
+
+### How-might-we question
+
+> **How might we help students recognize meaningful digital goal drift during a self-declared study session without surveilling them continuously, blocking legitimate content, or taking away their autonomy?**
+
+## 3. Design-thinking artifacts
+
+### Empathy map
+
+| Says | Thinks |
+|---|---|
+| “I will only watch one physics video.” | “This video is related, so using YouTube is fine.” |
+| “Why am I watching this now?” | “I need to study, but this looks interesting.” |
+| “I still need YouTube for school.” | “I want help, but I do not want to be controlled.” |
+
+| Does | Feels |
+|---|---|
+| Searches for a lesson, watches relevant content, then follows recommendations. | Frustrated after losing time. |
+| Switches between study videos and unrelated content. | Guilty or disappointed when the session drifts. |
+| Sets intentions but does not always maintain them. | Relieved when she regains control. |
+
+### User needs
+
+Maya needs to define a concrete intention, see that intention while studying, receive a timely and understandable reminder when activity appears unrelated, and retain the choice to return, save the content, or continue.
+
+### Design principles
+
+| Principle | Meaning |
+|---|---|
+| User-activated | Nothing is monitored before the user clicks Start Session. |
+| Intention-first | The user’s goal is the reference point, not a generic productivity rule. |
+| Limited scope | The MVP monitors YouTube only, not the entire device. |
+| Event-based | Check meaningful page or video changes instead of sending AI requests every second. |
+| Non-punitive | Warn and explain; do not shame, lock, or punish. |
+| User autonomy | The user can continue after seeing the warning. |
+| Transparent AI | Show the reason and acknowledge uncertainty. |
+| Privacy by design | Send only the minimum metadata needed for relevance evaluation. |
+
+## 4. MVP feature scope
+
+### Must-have feature 1: Intent Session
+
+The student enters:
+
+- Session title, such as “Study IGCSE Physics”.
+- Intention, such as “Study physics, focusing on momentum and impulse”.
+- Duration, such as 60 minutes.
+
+Razor generates a simple session object:
+
+```json
+{
+  "title": "Study IGCSE Physics",
+  "intention": "Study physics, focusing on momentum and impulse",
+  "durationMinutes": 60,
+  "relevantTopics": ["physics", "momentum", "impulse"],
+  "successCondition": "Explain momentum and solve one basic problem"
+}
+```
+
+The user reviews the interpretation and clicks **Start Focus Session**. Only then does monitoring activate.
+
+### Must-have feature 2: Goal-Drift Intervention
+
+During an active session, the extension detects a meaningful YouTube page or video change and reads limited metadata, such as the page title and URL. It compares the metadata with the active intention.
+
+The AI returns one of three states:
+
+| State | Product behavior |
+|---|---|
+| `aligned` | No disruptive intervention. Optionally show a small “Aligned with your intention” status. |
+| `uncertain` | Show a quiet status that says there is not enough context. Do not block. |
+| `drifting` | Show a gentle overlay with the reason and user choices. |
+
+The intervention must contain:
+
+```text
+Possible goal drift
+Your intention: Study IGCSE Physics
+Current activity: UFC 2026 Highlights
+Reason: This appears unrelated to the current study intention.
+
+Return to my goal   Save for later   Continue knowingly
+```
+
+### Must-have feature 3: Session-activated YouTube Search Mode
+
+When the user clicks **Start Focus Session**, Razor activates a YouTube search-focused mode through the Chrome extension. The mode remains active only while the session is active.
+
+The extension should:
+
+1. Show a small Razor status indicator on YouTube: `Focus Search Mode active`.
+2. Keep the active intention visible, such as `Study IGCSE Physics — Momentum`.
+3. Provide or suggest a goal-aligned search query, such as `IGCSE Physics momentum`.
+4. Open YouTube search results for the user’s intentional query rather than encouraging the home recommendation feed.
+5. Continue checking the title of the video the user chooses against the active intention.
+6. Show a gentle drift intervention if the user selects unrelated content.
+
+Search mode is not a replacement for YouTube and should not attempt to perfectly delete every recommendation from the YouTube DOM. The MVP should guide intentional search and evaluate the user’s selected activity. When the user clicks **Stop Session** or the countdown reaches zero, the extension must set the session to inactive, stop title/page checks, remove the Razor overlay, and restore normal browsing behavior.
+
+This is a supporting feature, not a separate product. The primary product is still the user-activated intention session plus goal-drift awareness.
+
+### Explicitly excluded
+
+Do not build device-wide monitoring, browser-history collection, keystroke monitoring, microphone or camera access, TikTok integration, parent dashboards, social login, screen-time analytics, addiction diagnosis, mental-health assessment, streaks, gamification, chat, complete calendar planning, video transcription, automated diagnosis, forced blocking, or permanent YouTube-feed modification outside an active session.
+
+## 5. Technical architecture
+
+### Components
+
+```text
+1. Razor web app
+   - React + TypeScript
+   - Hosted on Netlify
+   - Creates and ends the session
+   - Stores active session locally for the prototype
+
+2. Chrome Extension, Manifest V3
+   - Popup or side panel starts/stops the session
+   - Service worker stores session state
+   - Content script runs on YouTube only
+   - Detects page/title changes
+   - Shows in-page intervention overlay
+
+3. n8n workflow
+   - Webhook receives intention and limited page metadata
+   - Calls one AI model
+   - Validates structured JSON
+   - Returns classification to the extension
+
+4. Local fallback
+   - Deterministic mock responses for demo scenarios
+   - Used when n8n or AI is unavailable
+```
+
+### Session state
+
+The session controller is authoritative:
+
+```typescript
+type SessionStatus = "idle" | "active" | "paused" | "completed";
+
+type FocusSession = {
+  id: string;
+  title: string;
+  intention: string;
+  durationMinutes: number;
+  startedAt?: string;
+  endsAt?: string;
+  status: SessionStatus;
+  relevantTopics: string[];
+  successCondition: string;
+};
+```
+
+The extension must not classify or inspect YouTube when the session status is not `active`.
+
+### Page observation model
+
+```typescript
+type PageContext = {
+  url: string;
+  hostname: string;
+  title: string;
+  capturedAt: string;
+  source: "youtube";
+};
+```
+
+For the MVP, observe meaningful changes through a combination of URL/title change detection and a debounced check. A five- to ten-second polling interval is acceptable as a prototype fallback, but do not call the AI on every interval. Cache decisions by URL or title and add a cooldown after an intervention.
+
+### AI classification contract
+
+```typescript
+type DriftStatus = "aligned" | "uncertain" | "drifting";
+
+type DriftEvaluation = {
+  status: DriftStatus;
+  confidence: number;
+  reason: string;
+  suggestedAction: "continue" | "review" | "return_to_goal";
+};
+```
+
+The AI must follow these rules:
+
+1. Compare only the declared intention with the supplied page metadata.
+2. Do not claim to have watched or understood a full video when only a title or URL was supplied.
+3. Use `uncertain` when the title is vague or context is insufficient.
+4. Do not diagnose the user or infer psychological states.
+5. Do not state that the content is objectively bad; only assess alignment with the active intention.
+6. Do not prevent the user from continuing.
+7. Return valid JSON matching the contract.
+
+### Suggested n8n workflow
+
+```text
+Webhook: POST /braingrowth/evaluate
+        ↓
+Validate required fields
+        ↓
+Build strict AI prompt
+        ↓
+Call AI model
+        ↓
+Parse and validate JSON
+        ↓
+If invalid: return uncertain fallback
+        ↓
+Respond with DriftEvaluation
+```
+
+Expected request:
+
+```json
+{
+  "sessionId": "demo-session-1",
+  "intention": "Study IGCSE Physics, focusing on momentum",
+  "currentPage": {
+    "url": "https://www.youtube.com/watch?v=example",
+    "title": "UFC 2026 Highlights"
+  }
+}
+```
+
+## 6. Screen and interaction specification
+
+### Screen 1 — Welcome / create session
+
+The screen asks:
+
+> **What do you want to accomplish?**
+
+Fields:
+
+- Session title.
+- Intention.
+- Duration selector: 25, 45, or 60 minutes.
+
+Primary button: **Create Session**.
+
+### Screen 2 — Session review
+
+Show the AI interpretation:
+
+- Intention.
+- Relevant topics.
+- Success condition.
+- Duration.
+
+Primary button: **Start Focus Session**.
+
+Secondary action: **Edit Intention**.
+
+### Screen 3 — Active session
+
+Show only what the user needs:
+
+- Countdown.
+- Current intention.
+- Success condition.
+- Monitoring status: “YouTube monitoring active until session ends.”
+- Stop Session button.
+
+Use a calm interface. Do not show a large productivity dashboard.
+
+### Screen 4 — Drift intervention
+
+Show the current page title, active intention, short reason, and three choices:
+
+- **Return to my goal:** Open the Razor session view or suggested search.
+- **Save for later:** Store only the title locally in the prototype.
+- **Continue knowingly:** Dismiss warning and do not repeatedly interrupt for the same page during the cooldown.
+
+### Screen 5 — Session complete
+
+Show:
+
+> **Session complete. Monitoring has stopped.**
+
+Include the original intention and a neutral completion question. Do not claim that the user improved their discipline based on one session.
+
+## 7. Intervention logic
+
+### Trigger conditions
+
+A check may occur when:
+
+- the user navigates to a new YouTube video;
+- the YouTube title changes;
+- the user opens YouTube during an active session; or
+- the active tab returns to YouTube after a meaningful change.
+
+### Anti-annoyance rules
+
+- Wait briefly after a page change before evaluation.
+- Cache the result for the same URL/title.
+- Do not show repeated warnings for the same page during a cooldown.
+- Do not interrupt aligned content.
+- Show `uncertain` rather than forcing a decision.
+- Allow the user to continue.
+- Stop all monitoring immediately when the session ends.
+
+### Pseudocode
+
+```text
+onPageContextChanged(context):
+  if session.status !== "active": return
+  if context.hostname !== "youtube.com": return
+  if cache.contains(context.url): return
+  wait debounce period
+  evaluation = evaluate(context)
+  cache.save(context.url, evaluation)
+  if evaluation.status === "drifting":
+      show respectful intervention
+  else if evaluation.status === "uncertain":
+      show quiet uncertainty indicator
+  else:
+      continue without interruption
+```
+
+## 8. Privacy and safety requirements
+
+Display this message before activation:
+
+> **Razor monitors only the limited YouTube activity needed to compare your current page with your active intention. Monitoring begins when you start this session and stops when you end it.**
+
+The MVP must not collect real student identity, health information, private messages, keystrokes, audio, video, or unrelated browsing history. Use synthetic data for all demonstrations.
+
+The product must not use labels such as “lazy,” “addicted,” “weak,” or “failure.” Use “possible goal drift,” “uncertain,” and “return to intention.”
+
+## 9. Acceptance criteria
+
+### Session acceptance tests
+
+- A user can create a session with title, intention, and duration.
+- The system generates or displays a structured intention.
+- The countdown starts only after the user clicks Start.
+- The user can stop the session manually.
+- Monitoring status changes to inactive after stop or expiry.
+
+### Extension acceptance tests
+
+- Before session activation, the extension does not inspect or classify YouTube.
+- During a session, the extension can read the current YouTube title and URL.
+- A page change triggers at most one evaluation after debouncing.
+- The extension does not send requests for unrelated sites.
+- A repeated page does not repeatedly trigger the AI.
+
+### AI acceptance tests
+
+- A relevant physics title returns `aligned` or a reasonable explanation.
+- An unrelated UFC or gaming title returns `drifting` with a clear reason.
+- A vague title returns `uncertain`.
+- Invalid AI output becomes a safe `uncertain` fallback.
+- The AI never generates a diagnosis, medication, or mental-health label.
+
+### UX acceptance tests
+
+- A new user understands how to start a session without explanation.
+- The intervention is non-blocking.
+- The user can continue after a warning.
+- Session end clearly communicates that monitoring has stopped.
+- The demo can be completed with mock fallback even if n8n is unavailable.
+
+## 10. Cursor rules
+
+Create a `.cursorrules` file containing the following guidance:
+
+```text
+# Razor Hackathon Rules
+
+## Product boundary
+Razor is a user-activated intention and goal-drift awareness tool.
+The MVP monitors YouTube only during an explicitly active session.
+It does not monitor outside sessions, collect browsing history, diagnose addiction,
+judge personality, block content, or generate medical or psychological advice.
+
+## Scope
+Build only:
+1. Session creation with intention and duration.
+2. Session activation, countdown, pause/stop, and automatic expiry.
+3. Chrome Manifest V3 integration for YouTube metadata during active sessions.
+4. AI classification: aligned, uncertain, or drifting.
+5. A respectful, non-blocking intervention overlay.
+6. Mock fallback behavior.
+
+Do not add dashboards, accounts, parent controls, streaks, social features,
+full calendars, TikTok integration, device-wide monitoring, or complex storage.
+
+## Engineering rules
+- Use TypeScript types for all session, page, and AI response objects.
+- Validate all AI responses before rendering them.
+- Never trust model output blindly.
+- Use environment variables for URLs and API configuration.
+- Never commit secrets.
+- Keep the mock fallback available in development and demo mode.
+- Make the smallest change needed for each task.
+- Run the app and test after each implementation step.
+- Do not refactor unrelated files during the hackathon.
+
+## UX rules
+- Use calm, respectful, non-punitive language.
+- Explain why a resource appears misaligned.
+- Show uncertainty when context is insufficient.
+- Preserve the user's ability to continue.
+- Stop monitoring immediately when the session ends.
+```
+
+## 11. Staged Cursor prompts
+
+Use these prompts one at a time. Run and verify the app after each prompt.
+
+### Prompt 1 — Inspect and plan
+
+```text
+You are the lead engineer for Razor, a four-hour hackathon MVP.
+First inspect the existing repository and explain its current structure.
+Do not change code yet.
+
+The product is a user-activated focus companion. A student creates a timed study
+session with an intention. During the active session only, a Chrome extension will
+read limited YouTube page metadata and classify whether the current activity appears
+aligned, uncertain, or drifting relative to the intention.
+
+List the smallest implementation plan for the web session UI, shared TypeScript
+models, Chrome Manifest V3 extension, n8n webhook client, AI response validation,
+and mock fallback. Identify files you will create or modify.
+Do not add features outside the MVP.
+```
+
+### Prompt 2 — Build the web session flow
+
+```text
+Implement only the Razor web session flow.
+
+Create a clean responsive UI for:
+1. Creating a session with title, intention, and duration.
+2. Reviewing the structured intention using mock data.
+3. Starting a countdown session.
+4. Showing the active intention and monitoring status.
+5. Stopping the session.
+6. Showing a completion state when time expires.
+
+Use local state or localStorage only. Do not build authentication, a database,
+analytics, dashboards, or browser monitoring yet.
+Use TypeScript types and include loading/error/empty states.
+After implementation, run the app and report how to test the flow.
+```
+
+### Prompt 3 — Build the extension shell
+
+```text
+Create a minimal Chrome Manifest V3 extension for Razor.
+
+Requirements:
+- It must activate only when a Razor session is explicitly active.
+- It must be limited to YouTube pages.
+- It must read only the current page URL and visible page/video title.
+- It must not collect history, keystrokes, messages, microphone, camera, or data
+  from unrelated websites.
+- It must communicate session state through a simple typed mechanism.
+- It must include a small status indicator while monitoring is active.
+
+Do not connect AI yet. Add a development mock mode that logs detected page context
+without exposing credentials. Explain how to load the unpacked extension in Chrome.
+```
+
+### Prompt 4 — Add event-based detection
+
+```text
+Add event-based YouTube page detection to the extension.
+
+Detect meaningful URL or title changes, debounce them, and create a PageContext
+object. Do not call any API yet. Add caching by URL/title and a cooldown mechanism.
+The detector must do nothing when the session is idle, paused, completed, or expired.
+Add console logs that are clear enough for debugging, but do not log passwords or
+private browsing data.
+Test with these cases:
+1. Session inactive.
+2. Session active on a physics video.
+3. Session active after navigating to a different video.
+4. Session ended while YouTube remains open.
+```
+
+### Prompt 5 — Add the n8n/AI contract
+
+```text
+Add a typed client for a configurable n8n webhook.
+
+Request fields:
+- sessionId
+- intention
+- currentPage.url
+- currentPage.title
+
+Expected response fields:
+- status: aligned | uncertain | drifting
+- confidence: number from 0 to 1
+- reason: string
+- suggestedAction: continue | review | return_to_goal
+
+Validate every response at runtime. If the request fails or the response is invalid,
+return an uncertain fallback. Use an environment variable for the webhook URL and
+never hardcode credentials.
+Do not send data unless the session is active.
+```
+
+### Prompt 6 — Add the intervention overlay
+
+```text
+Add a non-blocking YouTube intervention overlay for drifting content.
+
+The overlay must show:
+- “Possible goal drift”
+- The active intention
+- The current page title
+- The AI reason
+- Return to my goal
+- Save for later
+- Continue knowingly
+
+Aligned content must not trigger an intrusive overlay. Uncertain content should show
+an understated uncertainty indicator. Add cooldown behavior so the same page does not
+repeatedly interrupt the user. The user must always be able to continue.
+Use respectful language and do not use shame, addiction, or failure labels.
+```
+
+### Prompt 7 — Add reliable demo fallback
+
+```text
+Add a deterministic mock fallback for the Razor demo.
+
+When demo mode is enabled or the n8n request fails, classify these examples:
+- Titles containing physics, momentum, impulse, or IGCSE → aligned.
+- Titles containing UFC, gaming, prank, celebrity, or entertainment → drifting.
+- Vague titles such as “This changed everything” → uncertain.
+
+The fallback must use the same DriftEvaluation type as the real AI response.
+Display a small development-only indicator when mock mode is active.
+Do not remove the real n8n path.
+```
+
+### Prompt 8 — Final verification and deployment preparation
+
+```text
+Perform a focused release check for the Razor hackathon MVP.
+
+Verify:
+1. The user can create and start a session.
+2. The countdown works and expiry stops monitoring.
+3. The extension is inactive outside an active session.
+4. YouTube title changes are detected and debounced.
+5. AI responses are validated.
+6. Mock fallback works.
+7. The overlay is non-blocking and respectful.
+8. No secrets are committed.
+9. Netlify build succeeds.
+10. README explains how Cursor, n8n, the AI model, and the extension were used.
+
+Fix only critical issues. Do not add features or refactor unrelated code.
+```
+
+## 12. Demo script
+
+Use a two-minute demonstration:
+
+1. “This is Maya, a secondary student who needs YouTube for studying but loses focus through recommendations.”
+2. Enter: “Study IGCSE Physics, focusing on momentum and impulse.”
+3. Set duration to 60 minutes and click Start.
+4. Open a relevant video titled “IGCSE Physics — Momentum Explained.”
+5. Show that Razor stays quiet because the content is aligned.
+6. Open an unrelated video titled “UFC 2026 Highlights.”
+7. Show the possible-goal-drift intervention.
+8. Choose “Return to my goal” or “Save for later.”
+9. End the session and show that monitoring has stopped.
+
+The demo message is:
+
+> **Razor does not decide what the student is allowed to watch. It helps the student notice when current behavior no longer matches the purpose they chose.**
+
+## 13. Four-hour build priorities
+
+| Time | Priority |
+|---|---|
+| 00:00–00:20 | Create the repository, `.cursorrules`, data types, and synthetic demo scenario. |
+| 00:20–01:10 | Build the web session creation, review, countdown, and completion flow. |
+| 01:10–02:00 | Build the extension shell and session-state communication. |
+| 02:00–02:35 | Add YouTube title/URL detection, debounce, and caching. |
+| 02:35–03:05 | Connect n8n/AI and preserve the mock fallback. |
+| 03:05–03:25 | Build the respectful intervention overlay. |
+| 03:25–03:45 | Deploy the web app to Netlify and verify the live flow. |
+| 03:45–04:00 | Test, capture screenshots, save Git evidence, and complete disclosures. |
+
+At 2:35, if the AI integration is not working, freeze the mock fallback and continue. A working deterministic demonstration is better than an unreliable “real AI” feature.
+
+## 14. Final scope lock
+
+The Razor MVP is complete when a judge can experience this sequence:
+
+```text
+Declare intention
+        ↓
+Start timed session
+        ↓
+YouTube Search Mode activates
+        ↓
+Search intentionally for the goal
+        ↓
+Open relevant content → continue quietly
+        ↓
+Open unrelated content → receive a gentle warning
+        ↓
+Choose what to do
+        ↓
+End session or timer expires
+        ↓
+Search Mode and monitoring stop
+        ↓
+Normal browsing returns
+```
+
+Anything outside that sequence is optional and should be rejected during the four-hour build.

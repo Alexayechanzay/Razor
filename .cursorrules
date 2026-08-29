@@ -1,0 +1,52 @@
+# Razor Hackathon Rules
+
+## Product boundary
+Razor is a user-activated, session-scoped intention tool.
+It does not ban the internet. It protects the purpose that brought the student online.
+
+The problem we own is YouTube replacing a study intention with a recommendation feed.
+We do not treat “tell Maya she drifted after she drifted” as the core product.
+
+The MVP monitors YouTube (or the simulated demo page) only during an explicitly active session.
+It does not monitor outside sessions, collect browsing history, diagnose addiction,
+judge personality, block content, or generate medical or psychological advice.
+
+## Scope
+Build only:
+1. One-field session start (intention + duration) from the extension popup, and the same start on the web backup.
+2. Session activation, countdown, stop, and automatic expiry. States: idle | active | ended.
+3. Search Mode: starting a session lands on a goal search, not Home.
+4. Chrome Manifest V3 integration for YouTube title/URL during active sessions.
+5. A simulated YouTube backup with the locked three-video demo.
+6. Classification: aligned | uncertain | drifting — fixture-first for the demo titles, heuristic otherwise.
+7. A respectful, non-blocking overlay on drift. Quiet chip on uncertain. Silence on aligned.
+8. Hard stop of all observation when the session ends.
+
+Do not add dashboards, accounts, parent controls, streaks, social features,
+full calendars, TikTok, device-wide monitoring, chat, transcription, or a required review screen.
+
+## Demo script (locked)
+Intention: "Study IGCSE Physics — momentum and impulse"
+- "The Most Misunderstood Concept in Physics" → aligned
+- "This changed everything" → uncertain
+- "I Failed Physics, Then Became a UFC Fighter" → drifting
+
+Do not lead demos with a plain UFC highlights clip.
+
+## Engineering rules
+- Use TypeScript types for session, page, and evaluation objects in the web app.
+- Validate any future AI/webhook response before rendering it.
+- Never trust model output blindly.
+- Keep the demo classifier available. Label it honestly. Do not pretend a keyword list is “the AI.”
+- Use environment variables for any webhook URL. Never commit secrets.
+- Make the smallest change needed for each task.
+- Run the app and test after implementation steps.
+- Do not refactor unrelated files during the hackathon.
+
+## UX rules
+- Use calm, respectful, non-punitive language.
+- Explain why a resource appears misaligned.
+- Show uncertainty when context is insufficient.
+- Preserve the user's ability to continue.
+- Stop monitoring immediately when the session ends.
+- First useful moment must be under 15 seconds from an empty popup.

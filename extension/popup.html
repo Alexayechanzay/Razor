@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Razor</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <header class="brand">
+        <span class="mark" aria-hidden="true"></span>
+        <div>
+          <p class="wordmark">Razor</p>
+          <p class="tag">Stay on your topic</p>
+        </div>
+      </header>
+
+      <section id="idle">
+        <h1>What are you studying?</h1>
+        <label class="sr-only" for="intention">Topic</label>
+        <textarea
+          id="intention"
+          rows="3"
+          placeholder="IGCSE Physics — momentum and impulse"
+        ></textarea>
+        <p class="label" id="duration-label">For how long?</p>
+        <div class="time-pick" role="group" aria-labelledby="duration-label">
+          <div class="time-field">
+            <button type="button" class="step" data-field="hours" data-delta="-1" aria-label="Less hours">−</button>
+            <label>
+              <input id="hours" type="number" min="0" max="4" value="0" inputmode="numeric" />
+              <span>hr</span>
+            </label>
+            <button type="button" class="step" data-field="hours" data-delta="1" aria-label="More hours">+</button>
+          </div>
+          <div class="time-field">
+            <button type="button" class="step" data-field="minutes" data-delta="-5" aria-label="Less minutes">−</button>
+            <label>
+              <input id="minutes" type="number" min="0" max="59" value="25" inputmode="numeric" />
+              <span>min</span>
+            </label>
+            <button type="button" class="step" data-field="minutes" data-delta="5" aria-label="More minutes">+</button>
+          </div>
+        </div>
+        <p id="duration-preview" class="time-preview">25 minutes · up to 4 hours</p>
+        <p class="privacy">
+          Razor only looks at the video title while you study. It stops when you stop.
+        </p>
+        <p id="error" class="error" hidden></p>
+        <button id="start" class="primary" type="button">Start studying</button>
+      </section>
+
+      <section id="active" hidden>
+        <p class="eyebrow">Studying now</p>
+        <p id="active-intention" class="goal"></p>
+        <p id="countdown" class="countdown"></p>
+        <p class="privacy">YouTube search stays on this topic until the timer ends.</p>
+        <button id="stop" class="ghost" type="button">I'm done</button>
+      </section>
+
+      <section id="ended" hidden>
+        <p class="eyebrow">Session over</p>
+        <h1>Razor is off.</h1>
+        <p id="ended-intention"></p>
+        <p class="privacy">YouTube is back to normal. Nothing is being checked.</p>
+        <button id="again" class="primary" type="button">Study again</button>
+      </section>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

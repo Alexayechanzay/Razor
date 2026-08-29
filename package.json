@@ -1,0 +1,10 @@
+{
+  "name": "razor",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "python -m http.server 5173 --directory web",
+    "check": "node scripts/check-evaluate.mjs && node scripts/check-journey.mjs"
+  }
+}
